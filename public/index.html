@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Objectifs Minecraft - Farms</title>
+  <style>
+    body {
+      font-family: 'Minecraftia', monospace;
+      padding: 20px;
+      background-image: url('2025-05-27_21.59.25.png');
+      background-size: cover;
+      color: #fff;
+      text-shadow: 1px 1px 2px #000;
+      min-height: 100vh;
+      margin: 0;
+    }
+    h1 {
+      text-align: center;
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+    #progress-container {
+      max-width: 600px;
+      margin: 0 auto 30px;
+      background: rgba(0, 0, 0, 0.5);
+      border: 2px solid #444;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    #progress-bar {
+      height: 25px;
+      width: 0%;
+      background: linear-gradient(to right, #44d362, #3ac243);
+      transition: width 0.3s;
+      text-align: center;
+      line-height: 25px;
+      font-weight: bold;
+    }
+    .filters, #buttons {
+      max-width: 700px;
+      margin: 0 auto 20px;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 10px;
+      border-radius: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+    select, button {
+      font-family: 'Minecraftia', monospace;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+    }
+    select {
+      min-width: 160px;
+    }
+    button:hover {
+      background-color: #2980b9;
+      color: white;
+    }
+    .objective-list {
+      max-width: 700px;
+      margin: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    label {
+      display: flex;
+      align-items: center;
+      margin: 0;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 8px 10px;
+      border: 1px solid #888;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      gap: 10px;
+      position: relative;
+    }
+    label .icon {
+      width: 24px;
+      height: 24px;
+      image-rendering: pixelated;
+    }
+    label .star {
+      font-size: 18px;
+      cursor: pointer;
+      user-select: none;
+      color: #ccc;
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      transition: color 0.2s;
+    }
+    label .star.prioritized {
+      color: gold;
+    }
+    input[type='checkbox'] {
+      transform: scale(1.2);
+      cursor: pointer;
+    }
+    textarea.notes {
+      flex-grow: 1;
+      min-height: 40px;
+      max-height: 60px;
+      font-family: 'Minecraftia', monospace;
+      font-size: 14px;
+      border-radius: 6px;
+      border: none;
+      resize: vertical;
+      margin-left: 10px;
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+      padding: 4px 6px;
+      outline: none;
+    }
+    @font-face {
+      font-family: 'Minecraftia';
+      src: url('https://fonts.cdnfonts.com/s/14950/Minecraftia-Regular.ttf') format('truetype');
+    }
+    @media (max-width: 600px) {
+      .filters, #buttons {
+        flex-direction: column;
+        gap: 8px;
+      }
+      label {
+        flex-wrap: wrap;
+      }
+      textarea.notes {
+        margin-left: 0;
+        margin-top: 6px;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🌾 Objectifs Minecraft : Toutes les Farms</h1>
+
+  <div id="progress-container">
+    <div id="progress-bar">0%</div>
+  </div>
+
+  <div class="filters">
+    <select id="filter-category">
+      <option value="">Filtrer par catégorie</option>
+      <option value="Culture">Culture</option>
+      <option value="Mob">Mob</option>
+      <option value="Minerai">Minerai</option>
+      <option value="Autre">Autre</option>
+    </select>
+
+    <select id="filter-biome">
+      <option value="">Filtrer par biome</option>
+      <option value="Nether">Nether</option>
+      <option value="Overworld">Overworld</option>
+      <option value="End">End</option>
+      <option value="Aquatique">Aquatique</option>
+    </select>
+
+    <select id="filter-automation">
+      <option value="">Filtrer par automatisation</option>
+      <option value="Automatique">Automatique</option>
+      <option value="Semi-automatique">Semi-automatique</option>
+      <option value="Manuelle">Manuelle</option>
+    </select>
+
+    <select id="sort-by">
+      <option value="name">Trier par nom</option>
+      <option value="category">Trier par catégorie</option>
+      <option value="biome">Trier par biome</option>
+      <option value="automation">Trier par automatisation</option>
+      <option value="priority">Trier par priorité</option>
+    </select>
+
+    <select id="sort-direction">
+      <option value="asc">Ascendant</option>
+      <option value="desc">Descendant</option>
+    </select>
+  </div>
+
+  <div class="objective-list" id="objectives"></div>
+
+  <div id="buttons">
+    <button onclick="checkAll()">Tout cocher</button>
+    <button onclick="resetCheckboxes()">Réinitialiser</button>
+    <button onclick="exportChecklist('txt')">Exporter TXT</button>
+    <button onclick="exportChecklist('json')">Exporter JSON</button>
+    <button onclick="importChecklist()">Importer JSON</button>
+    <button onclick="toggleMusic()">🎵 Musique On/Off</button>
+  </div>
+
+  <audio id="bgMusic" loop>
+    <source src="Moog_city_2.ogg.mp3" type="audio/mp3" />
+    Votre navigateur ne supporte pas l'audio.
+  </audio>
+
+  <input type="file" id="importFile" style="display:none" accept=".json" />
+
+  <script>
+    const farms = [
+      { name: "Farm à algues", icon: "icons/kelp.png", category:"Culture", biome:"Aquatique", automation:"Automatique" },
+      { name: "Farm à bambou", icon: "icons/bamboo.png", category:"Culture", biome:"Overworld", automation:"Automatique" },
+      { name: "Farm à blaze", icon: "icons/blaze_rod.png", category:"Mob", biome:"Nether", automation:"Semi-automatique" },
+      { name: "Farm à bone meal", icon: "icons/bone_meal.png", category:"Autre", biome:"Overworld", automation:"Manuelle" },
+      { name: "Farm à canne à sucre", icon: "icons/sugar_cane.png", category:"Culture", biome:"Overworld", automation:"Automatique" },
+      { name: "Farm à carottes", icon: "icons/carrot.png", category:"Culture", biome:"Overworld", automation:"Automatique" },
+      { name: "Farm à cactus", icon: "icons/cactus_side.png", category:"Culture", biome:"Overworld", automation:"Automatique" },
+      { name: "Farm à charge", icon: "icons/breeze_rod.png", category:"Autre", biome:"Overworld", automation:"Manuelle" },
+      { name: "Farm à champignons", icon: "icons/red_mushroom.png", category:"Culture", biome:"Overworld", automation:"Automatique" },
+      { name: "Farm à chicken", icon: "icons/chicken.png", category:"Mob", biome:"Overworld", automation:"Automatique" },
+      { name: "Farm à citrouilles", icon: "icons/pumpkin_side.png", category:"Culture", biome:"Overworld", automation:"Automatique" },
+      { name: "Farm à cobblestone", icon: "icons/cobblestone.png", category:"Autre", biome:"Overworld", automation:"Automatique" },
+      { name: "Farm à cochons", icon: "icons/porkchop.png", category:"Mob", biome:"Overworld", automation:"Automatique" },
+      { name: "Farm à creepers", icon: "icons/gunpowder.png", category:"Mob", biome:"Overworld", automation:"Automatique" },
+      { name: "Farm à dripstone", icon: "icons/pointed_dripstone.png", category:"Autre", biome:"Overworld", automation:"Automatique" },
+      { name: "Farm à endermen", icon: "icons/ender_pearl.png", category:"Mob", biome:"Overworld", automation:"Semi-automatique" },
+      { name: "Farm à glace", icon: "icons/ice.png", category:"Autre", biome:"Overworld", automation:"Automatique" },
+      { name: "Farm à gold", icon: "icons/gold_ingot.png", category:"Minerai", biome:"Nether", automation:"Automatique" },
+      { name: "Farm à hanging roots", icon: "icons/hanging_roots.png", category:"Autre", biome:"Overworld", automation:"Manuelle" },
+      { name: "Farm à honey", icon: "icons/honey_bottle.png", category:"Autre", biome:"Overworld", automation:"Semi-automatique" },
+      { name: "Farm à iron", icon: "icons/iron_ingot.png", category:"Minerai", biome:"Overworld", automation:"Automatique" },
+      { name: "Farm à lave", icon: "icons/lava_bucket.png", category:"Autre", biome:"Nether", automation:"Manuelle" },
+      { name: "Farm à melons", icon: "icons/melon_side.png", category:"Culture", biome:"Overworld", automation:"Automatique" },
+      { name: "Farm à moutons", icon: "icons/white_wool.png", category:"Mob", biome:"Overworld", automation:"Automatique" },
+      { name: "Farm à nether wart", icon: "icons/nether_wart.png", category:"Culture", biome:"Nether", automation:"Automatique" },
+      { name: "Farm à obsidienne", icon: "icons/obsidian.png", category:"Autre", biome:"Nether", automation:"Manuelle" },
+      { name: "Farm à poissons", icon: "icons/cod.png", category:"Mob", biome:"Aquatique", automation:"Automatique" },
+      { name: "Farm à résine", icon: "icons/resin_clump.png", category:"Autre", biome:"Overworld", automation:"Manuelle" },
+      { name: "Farm à Shulker", icon: "icons/shulker_shell.png", category:"Mob", biome:"End", automation:"Automatique" },
+      { name: "Farm à slimes", icon: "icons/slime_ball.png", category:"Mob", biome:"Overworld", automation:"Automatique" },
+      { name: "Farm à neige", icon: "icons/snowball.png", category:"Autre", biome:"Overworld", automation:"Automatique" },
+      { name: "Farm à sorcières", icon: "icons/glass_bottle.png", category:"Mob", biome:"Overworld", automation:"Semi-automatique" },
+      { name: "Farm à squelettes", icon: "icons/bone.png", category:"Mob", biome:"Overworld", automation:"Automatique" },
+      { name: "Farm à spawner", icon: "icons/spawner.png", category:"Autre", biome:"Overworld", automation:"Manuelle" },
+      { name: "Farm à tuff", icon: "icons/tuff.png", category:"Autre", biome:"Overworld", automation:"Manuelle" },
+      { name: "Farm à vaches", icon: "icons/beef.png", category:"Mob", biome:"Overworld", automation:"Automatique" },
+      { name: "Farm à wheat", icon: "icons/wheat.png", category:"Culture", biome:"Overworld", automation:"Automatique" },
+      { name: "Farm à XP", icon: "icons/experience_bottle.png", category:"Autre", biome:"Overworld", automation:"Semi-automatique" },
+      { name: "Farm à zombies", icon: "icons/rotten_flesh.png", category:"Mob", biome:"Overworld", automation:"Automatique" },
+      { name: "Farm à arbres", icon: "icons/oak_sapling.png", category:"Culture", biome:"Overworld", automation:"Automatique" }
+    ];
+
+    // État initial
+    let farmStates = farms.map(() => ({
+      checked: false,
+      priority: false,
+      notes: ''
+    }));
+
+    const container = document.getElementById("objectives");
+    const progressBar = document.getElementById("progress-bar");
+    const music = document.getElementById("bgMusic");
+
+    const filterCategory = document.getElementById("filter-category");
+    const filterBiome = document.getElementById("filter-biome");
+    const filterAutomation = document.getElementById("filter-automation");
+    const sortBy = document.getElementById("sort-by");
+    const sortDirection = document.getElementById("sort-direction");
+    const importFile = document.getElementById("importFile");
+
+    function saveState() {
+      localStorage.setItem("minecraftFarmsState", JSON.stringify(farmStates));
+      updateProgress();
+    }
+
+    function loadState() {
+      const saved = JSON.parse(localStorage.getItem("minecraftFarmsState"));
+      if (saved && saved.length === farms.length) {
+        farmStates = saved;
+      }
+    }
+
+    function updateProgress() {
+      const checkedCount = farmStates.filter(f => f.checked).length;
+      const percent = Math.round((checkedCount / farms.length) * 100);
+      progressBar.style.width = percent + "%";
+      progressBar.textContent = percent + "%";
+    }
+
+    // Gestion des filtres + tri
+    function applyFiltersAndSort() {
+      let filtered = farms.map((farm, i) => ({...farm, index: i}));
+
+      // Filtres
+      if (filterCategory.value) filtered = filtered.filter(f => f.category === filterCategory.value);
+      if (filterBiome.value) filtered = filtered.filter(f => f.biome === filterBiome.value);
+      if (filterAutomation.value) filtered = filtered.filter(f => f.automation === filterAutomation.value);
+
+      // Tri
+      const key = sortBy.value;
+      const dir = sortDirection.value === 'asc' ? 1 : -1;
+      filtered.sort((a,b) => {
+        let valA, valB;
+        if (key === 'priority') {
+          valA = farmStates[a.index].priority ? 1 : 0;
+          valB = farmStates[b.index].priority ? 1 : 0;
+          return (valB - valA) * dir; // Priorité descendante par défaut
+        } else {
+          valA = a[key].toLowerCase();
+          valB = b[key].toLowerCase();
+          return valA < valB ? -1 * dir : valA > valB ? 1 * dir : 0;
+        }
+      });
+
+      return filtered;
+    }
+
+    function toggleCheck(i) {
+      farmStates[i].checked = !farmStates[i].checked;
+      saveState();
+      renderObjectives();
+    }
+
+    function togglePriority(i) {
+      farmStates[i].priority = !farmStates[i].priority;
+      saveState();
+      renderObjectives();
+    }
+
+    function updateNotes(i, value) {
+      farmStates[i].notes = value;
+      saveState();
+    }
+
+    function renderObjectives() {
+      const list = applyFiltersAndSort();
+      container.innerHTML = '';
+
+      list.forEach(farm => {
+        const i = farm.index;
+        const state = farmStates[i];
+
+        const label = document.createElement('label');
+
+        // Checkbox
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = state.checked;
+        checkbox.addEventListener('change', () => toggleCheck(i));
+        label.appendChild(checkbox);
+
+        // Icon
+        const icon = document.createElement('img');
+        icon.src = farm.icon;
+        icon.alt = farm.name;
+        icon.className = 'icon';
+        label.appendChild(icon);
+
+        // Texte
+        const span = document.createElement('span');
+        span.textContent = `${farm.name} (${farm.category} | ${farm.biome} | ${farm.automation})`;
+        label.appendChild(span);
+
+        // Étoile prioritaire
+        const star = document.createElement('span');
+        star.innerHTML = '★';
+        star.className = 'star' + (state.priority ? ' prioritized' : '');
+        star.title = state.priority ? 'Déprioriser' : 'Prioriser';
+        star.addEventListener('click', (e) => {
+          e.preventDefault();
+          togglePriority(i);
+        });
+        label.appendChild(star);
+
+        container.appendChild(label);
+
+        // Notes textarea
+        const notes = document.createElement('textarea');
+        notes.placeholder = "Ajouter une note...";
+        notes.className = "notes";
+        notes.value = state.notes || '';
+        notes.addEventListener('input', (e) => updateNotes(i, e.target.value));
+        container.appendChild(notes);
+      });
+
+      updateProgress();
+    }
+
+    // Boutons
+    function checkAll() {
+      farmStates.forEach(f => f.checked = true);
+      saveState();
+      renderObjectives();
+    }
+
+     function Map() {
+  window.location.href = 'map.html';
+}
+
+    function resetCheckboxes() {
+      farmStates.forEach(f => f.checked = false);
+      saveState();
+      renderObjectives();
+    }
+
+    function exportChecklist(type) {
+      let data;
+      if (type === 'json') {
+        const exportData = farms.map((farm, i) => ({
+          ...farm,
+          checked: farmStates[i].checked,
+          priority: farmStates[i].priority,
+          notes: farmStates[i].notes
+        }));
+        data = JSON.stringify(exportData, null, 2);
+      } else {
+        // Format txt simple
+        let lines = [];
+        farms.forEach((farm, i) => {
+          const state = farmStates[i];
+          lines.push(`${state.checked ? '[x]' : '[ ]'} ${farm.name} (${farm.category} | ${farm.biome} | ${farm.automation})`);
+          if(state.notes) lines.push(`  Note: ${state.notes}`);
+        });
+        data = lines.join('\n');
+      }
+      const blob = new Blob([data], {type: "text/" + type});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `minecraft_farms_checklist.${type}`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importChecklist() {
+      importFile.value = null;
+      importFile.click();
+    }
+
+    importFile.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const imported = JSON.parse(ev.target.result);
+          if(Array.isArray(imported) && imported.length === farms.length) {
+            // On met à jour uniquement ce qu'on connaît
+            imported.forEach((impFarm, i) => {
+              farmStates[i].checked = !!impFarm.checked;
+              farmStates[i].priority = !!impFarm.priority;
+              farmStates[i].notes = impFarm.notes || '';
+            });
+            saveState();
+            renderObjectives();
+            alert("Importation réussie !");
+          } else {
+            alert("Fichier JSON invalide ou ne correspond pas à la liste.");
+          }
+        } catch {
+          alert("Erreur lors de la lecture du fichier JSON.");
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    function toggleMusic() {
+      if(music.paused) music.play();
+      else music.pause();
+    }
+
+    // Initialisation
+    loadState();
+    renderObjectives();
+
+    // Rafraîchir si filtre ou tri changent
+    [filterCategory, filterBiome, filterAutomation, sortBy, sortDirection].forEach(el => {
+      el.addEventListener('change', renderObjectives);
+    });
+
+
+  </script>
+  
+
+</body>
+</html>
